@@ -13,3 +13,34 @@ Version 2
 
 <img width="1895" height="961" alt="image" src="https://github.com/user-attachments/assets/cd27bc37-9b96-4865-b91f-0d9d9416f1b8" />
 
+# 🌾 AgroAI - Smart Farming Dashboard
+
+AI-Powered IoT Smart Farming Ecosystem | Real-Time Crop Monitoring & Predictive Irrigation
+
+## 🚀 Live Demo
+https://agroai-biggan.netlify.app/
+
+## 📊 Features
+- Real-time sensor monitoring (Temperature, Humidity, Soil Moisture, Water Level, Light, pH, Battery)
+- XGBoost AI model for soil moisture prediction
+- Interactive dashboard with glassmorphism design
+- Animated pump status with fan & water drops
+- ThingSpeak cloud integration
+- Complete IoT-to-AI pipeline visualization
+
+## 🛠️ Tech Stack
+- **Frontend:** HTML5, TailwindCSS, JavaScript, Chart.js
+- **Backend:** ThingSpeak API, Hugging Face Spaces
+- **AI Model:** XGBoost Regressor
+- **Hardware:** ESP32, DHT22, Ultrasonic, LDR, Relay Module
+
+## 🔧 Local Setup
+1. Clone this repository
+2. Open `index.html` in your browser
+3. Make sure your ThingSpeak channel is public or add your Read API Key
+
+## 📡 Data Pipeline
+
+
+## 👨‍💻 Author
+**G.M. Biggan**
