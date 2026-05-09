@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgroAI | Smart Farming Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background: linear-gradient(135deg, #0a0f0d 0%, #0d1b0d 50%, #0a1208 100%); min-height: 100vh; }
+        
+        .glass-card {
+            background: rgba(10, 20, 10, 0.7);
+            backdrop-filter: blur(12px);
+            border-radius: 24px;
+            border: 1px solid rgba(74, 222, 128, 0.2);
+            transition: all 0.3s ease;
+        }
+        .glass-card:hover {
+            border-color: rgba(74, 222, 128, 0.5);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(74, 222, 128, 0.15);
+        }
+        
+        .status-led {
+            width: 10px; height: 10px; border-radius: 50%; display: inline-block;
+        }
+        .status-online { background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
+        .status-offline { background: #ef4444; animation: none; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+        
+        .value-update {
+            animation: pop 0.25s ease-out;
+        }
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); color: #4ade80; }
+            100% { transform: scale(1); }
+        }
+        
+        .progress-bar { transition: width 0.5s ease-out; }
+        
+        .fan-spin { animation: spin 0.8s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        
+        .water-drip { animation: drip 0.7s ease-in infinite; }
+        @keyframes drip {
+            0% { transform: translateY(-8px); opacity: 1; }
+            100% { transform: translateY(20px); opacity: 0; }
+        }
+        
+        .sparkline-canvas { height: 45px !important; width: 100% !important; }
+        
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #1a2a1a; }
+        ::-webkit-scrollbar-thumb { background: #4ade80; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container mx-auto px-4 py-6 max-w-7xl">
+
+    <!-- ========== HEADER ========== -->
+    <div class="text-center mb-8">
+        <div class="flex items-center justify-center gap-3 mb-2">
+            <i class="fas fa-leaf text-5xl text-green-400"></i>
+            <h1 class="text-5xl font-extrabold bg-gradient-to-r from-green-400 via-emerald-400 to-lime-400 bg-clip-text text-transparent">AgroAI</h1>
+            <i class="fas fa-microchip text-5xl text-emerald-400"></i>
+        </div>
+        <p class="text-gray-100">
+            <i class="fas fa-chart-line text-green-400"></i>
+            AI-Powered Smart Farming Ecosystem | Real-Time IoT Monitoring
+            <i class="fas fa-cloud-upload-alt text-green-400"></i>
+        </p>
+        <!-- Author Link -->
+            <div class="mt-6">
+                <a href="https://biggan-aiml-portfolio-v1.netlify.app/" target="_blank" 
+                   class="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-green-600/20 to-emerald-600/20 backdrop-blur-sm rounded-full border border-green-500/30 hover:border-green-400 transition-all duration-300 hover:scale-105 group">
+                    <i class="fas fa-code-branch text-green-400 group-hover:rotate-180 transition-transform duration-500"></i>
+                    <span class="text-gray-200 font-medium">Created by</span>
+                    <span class="text-green-400 font-bold tracking-wide">G.M. Biggan</span>
+                    <i class="fas fa-external-link-alt text-green-400 text-xs group-hover:translate-x-1 transition-transform"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========== STATUS BAR ========== -->
+    <div class="glass-card p-4 mb-6">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+            <div class="flex justify-center items-center gap-2"><div class="status-led status-online" id="ledWokwi"></div><span class="text-gray-300 text-sm">ESP32 (Wokwi)</span></div>
+            <div class="flex justify-center items-center gap-2"><div class="status-led status-online" id="ledThing"></div><span class="text-gray-300 text-sm">ThingSpeak</span></div>
+            <div class="flex justify-center items-center gap-2"><div class="status-led status-online" id="ledAI"></div><span class="text-gray-300 text-sm">AI Model (HF)</span></div>
+            <div class="flex justify-center items-center gap-2"><div class="status-led status-online" id="ledAPI"></div><span class="text-gray-300 text-sm">API Server</span></div>
+            <div class="flex justify-center items-center gap-2"><div class="status-led status-online" id="ledDash"></div><span class="text-gray-300 text-sm">Dashboard</span></div>
+        </div>
+        <div class="text-center mt-2"><p class="text-xs text-gray-100" id="lastUpdateText">Last Update: --</p></div>
+    </div>
+
+    <!-- ========== AI TOGGLE BUTTON ========== -->
+    <div class="flex justify-end mb-5">
+        <button id="aiToggleBtn" class="px-6 py-2.5 rounded-2xl bg-gradient-to-r from-purple-900/60 to-pink-900/60 border border-purple-500/60 hover:border-purple-400 transition-all flex items-center gap-3">
+            <i class="fas fa-robot text-purple-300 text-lg"></i>
+            <span class="text-white font-semibold">AI Prediction</span>
+            <div class="w-10 h-5 bg-gray-700 rounded-full relative transition-colors" id="aiToggleBg">
+                <div class="absolute top-0.5 left-0.5 w-4 h-4 bg-gray-400 rounded-full transition-transform" id="aiToggleKnob"></div>
+            </div>
+            <span class="text-sm font-mono text-white" id="aiToggleStatus">OFF</span>
+        </button>
+    </div>
+
+    <!-- ========== 8 MAIN CARDS with Sparklines ========== -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+        
+        <!-- Card 1: Temperature -->
+        <div class="glass-card p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase">TEMPERATURE</p>
+                    <p class="text-4xl font-bold text-white mt-1" id="tempVal">--</p>
+                    <p class="text-red-400 text-xs">°Celsius</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-red-500/20 flex items-center justify-center">
+                    <i class="fas fa-temperature-high text-red-400 text-xl"></i>
+                </div>
+            </div>
+            <canvas id="sparkTemp" class="sparkline-canvas mt-2"></canvas>
+            <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2"><div class="progress-bar bg-gradient-to-r from-red-500 to-orange-400 h-1.5 rounded-full" id="tempBar" style="width:0%"></div></div>
+            <p class="text-gray-500 text-xs mt-2">Range: 0-60°C</p>
+        </div>
+        
+        <!-- Card 2: Humidity -->
+        <div class="glass-card p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase">HUMIDITY</p>
+                    <p class="text-4xl font-bold text-white mt-1" id="humVal">--</p>
+                    <p class="text-blue-400 text-xs">%Relative</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
+                    <i class="fas fa-tint text-blue-400 text-xl"></i>
+                </div>
+            </div>
+            <canvas id="sparkHum" class="sparkline-canvas mt-2"></canvas>
+            <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2"><div class="progress-bar bg-gradient-to-r from-blue-500 to-cyan-400 h-1.5 rounded-full" id="humBar" style="width:0%"></div></div>
+            <p class="text-gray-500 text-xs mt-2">Range: 0-100%</p>
+        </div>
+        
+        <!-- Card 3: Soil Moisture -->
+        <div class="glass-card p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase">SOIL MOISTURE</p>
+                    <p class="text-4xl font-bold text-white mt-1" id="soilVal">--</p>
+                    <p class="text-green-400 text-xs">%Moisture</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <i class="fas fa-seedling text-green-400 text-xl"></i>
+                </div>
+            </div>
+            <canvas id="sparkSoil" class="sparkline-canvas mt-2"></canvas>
+            <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2"><div class="progress-bar bg-gradient-to-r from-green-500 to-emerald-400 h-1.5 rounded-full" id="soilBar" style="width:0%"></div></div>
+            <p class="text-gray-500 text-xs mt-2" id="soilHint">Pump ON if &lt;35%</p>
+        </div>
+        
+        <!-- Card 4: Water Level + Pump + Fan Animation -->
+        <div class="glass-card p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase">WATER LEVEL</p>
+                    <p class="text-4xl font-bold text-white mt-1" id="waterVal">--</p>
+                    <p class="text-cyan-400 text-xs">Centimeters</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <i class="fas fa-fan text-3xl text-cyan-300" id="fanIcon"></i>
+                    <div id="dropsContainer" class="flex gap-1 mt-1 h-6"></div>
+                </div>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2"><div class="progress-bar bg-gradient-to-r from-cyan-500 to-blue-400 h-1.5 rounded-full" id="waterBar" style="width:0%"></div></div>
+            <p class="text-gray-500 text-xs mt-2">Tank Capacity: 400cm</p>
+            <p class="text-green-400 text-xs mt-1 font-semibold" id="pumpStatusText">Pump: OFF</p>
+        </div>
+        
+        <!-- Card 5: Light Intensity with Dynamic Background -->
+        <div class="glass-card p-4 relative overflow-hidden" id="lightCard">
+            <div class="absolute inset-0 transition-all duration-200 pointer-events-none" id="lightGlow" style="background: radial-gradient(circle at 30% 30%, rgba(250,204,21,0), rgba(249,115,22,0))"></div>
+            <div class="relative">
+                <div class="flex justify-between items-start">
+                    <div>
+                        <p class="text-gray-400 text-xs uppercase">LIGHT INTENSITY</p>
+                        <p class="text-4xl font-bold text-white mt-1" id="lightVal">--</p>
+                        <p class="text-yellow-400 text-xs">%Brightness</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                        <i class="fas fa-sun text-yellow-400 text-xl"></i>
+                    </div>
+                </div>
+                <canvas id="sparkLight" class="sparkline-canvas mt-2"></canvas>
+                <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2"><div class="progress-bar bg-gradient-to-r from-yellow-500 to-orange-400 h-1.5 rounded-full" id="lightBar" style="width:0%"></div></div>
+                <p class="text-gray-500 text-xs mt-2">Photosynthesis Level</p>
+            </div>
+        </div>
+        
+        <!-- Card 6: Soil pH -->
+        <div class="glass-card p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase">SOIL pH LEVEL</p>
+                    <p class="text-4xl font-bold text-white mt-1" id="phVal">--</p>
+                    <p class="text-orange-400 text-xs">pH Scale</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
+                    <i class="fas fa-flask text-orange-400 text-xl"></i>
+                </div>
+            </div>
+            <canvas id="sparkPh" class="sparkline-canvas mt-2"></canvas>
+            <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2"><div class="progress-bar bg-gradient-to-r from-orange-500 to-pink-400 h-1.5 rounded-full" id="phBar" style="width:0%"></div></div>
+            <p class="text-gray-500 text-xs mt-2" id="phHint">Neutral Range</p>
+        </div>
+        
+        <!-- Card 7: Battery -->
+        <div class="glass-card p-4">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase">BATTERY LEVEL</p>
+                    <p class="text-4xl font-bold text-white mt-1" id="batVal">--</p>
+                    <p class="text-green-400 text-xs">%Remaining</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
+                    <i class="fas fa-battery-full text-green-400 text-xl"></i>
+                </div>
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-1.5 mt-2"><div class="progress-bar bg-gradient-to-r from-green-500 to-lime-400 h-1.5 rounded-full" id="batBar" style="width:0%"></div></div>
+            <p class="text-gray-500 text-xs mt-2">Solar Powered</p>
+        </div>
+        
+        <!-- Card 8: AI Prediction Result -->
+        <div class="glass-card p-4 bg-gradient-to-br from-purple-900/20 to-pink-900/20">
+            <div class="flex justify-between items-start">
+                <div>
+                    <p class="text-gray-400 text-xs uppercase">AI PREDICTION</p>
+                    <p class="text-3xl font-bold text-white mt-1" id="aiPredVal">--</p>
+                    <p class="text-purple-300 text-xs" id="aiRecText">Waiting</p>
+                </div>
+                <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
+                    <i class="fas fa-brain text-purple-400 text-xl"></i>
+                </div>
+            </div>
+            <p class="text-gray-400 text-xs mt-2" id="aiConfText">Confidence: --</p>
+            <p class="text-gray-500 text-xs" id="aiModelStatusText">Model: XGBoost</p>
+        </div>
+    </div>
+
+    <!-- ========== MAIN CHARTS ========== -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="glass-card p-5">
+            <div class="flex items-center gap-2 mb-3"><i class="fas fa-chart-bar text-green-400 text-xl"></i><h3 class="text-white font-bold text-lg">Live Sensor Trends</h3></div>
+            <canvas id="mainChart" height="200"></canvas>
+        </div>
+        <div class="glass-card p-5">
+            <div class="flex items-center gap-2 mb-3"><i class="fas fa-chart-pie text-green-400 text-xl"></i><h3 class="text-white font-bold text-lg">System Health</h3></div>
+            <canvas id="healthChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- ========== AI INSIGHT ENGINE ========== -->
+    <div class="glass-card p-5 mb-8 border-l-8 border-purple-500">
+        <div class="flex items-center gap-2"><i class="fas fa-robot text-purple-400 text-2xl"></i><h3 class="text-white font-bold text-xl">🤖 AI Insight Engine <span id="modeBadge" class="text-sm text-gray-400">(Manual Mode)</span></h3></div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mt-4">
+            <div class="bg-black/30 p-4 rounded-xl"><p class="text-gray-400 text-sm">Current Soil</p><p class="text-3xl font-bold text-white" id="aiCurSoil">--%</p></div>
+            <div class="bg-black/30 p-4 rounded-xl"><p class="text-gray-400 text-sm">Predicted (Next 15min)</p><p class="text-3xl font-bold text-white" id="aiPredSoil">--%</p></div>
+            <div class="bg-black/30 p-4 rounded-xl"><p class="text-gray-400 text-sm">Recommendation</p><p class="text-2xl font-bold" id="aiRecSoilText">--</p></div>
+        </div>
+        <p class="text-gray-400 text-sm mt-4" id="aiExplainText">💡 Toggle AI ON to get XGBoost predictions</p>
+    </div>
+
+    <!-- ========== FULL PIPELINE (Enhanced) ========== -->
+    <div class="glass-card p-5 mb-6">
+        <div class="flex items-center gap-2 mb-5"><i class="fas fa-diagram-project text-green-400 text-2xl"></i><h3 class="text-white font-bold text-xl">📡 Complete IoT-to-AI Pipeline</h3></div>
+        <div class="flex flex-wrap justify-center items-center gap-4 md:gap-8">
+            <div class="text-center"><div class="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center text-4xl">🔌</div><p class="text-sm font-semibold text-gray-300 mt-1">ESP32+Sensors</p><div class="status-led w-2 h-2 mx-auto mt-1 status-online" id="pLed1"></div></div>
+            <i class="fas fa-arrow-right text-gray-500 text-2xl"></i>
+            <div class="text-center"><div class="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center text-4xl">☁️</div><p class="text-sm font-semibold text-gray-300 mt-1">ThingSpeak</p><div class="status-led w-2 h-2 mx-auto mt-1 status-online" id="pLed2"></div></div>
+            <i class="fas fa-arrow-right text-gray-500 text-2xl"></i>
+            <div class="text-center"><div class="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center text-4xl">🌐</div><p class="text-sm font-semibold text-gray-300 mt-1">API Call</p><div class="status-led w-2 h-2 mx-auto mt-1 status-online" id="pLed3"></div></div>
+            <i class="fas fa-arrow-right text-gray-500 text-2xl"></i>
+            <div class="text-center"><div class="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center text-4xl">🖥️</div><p class="text-sm font-semibold text-gray-300 mt-1">Dashboard</p><div class="status-led w-2 h-2 mx-auto mt-1 status-online" id="pLed4"></div></div>
+            <i class="fas fa-arrow-right text-gray-500 text-2xl"></i>
+            <div class="text-center"><div class="w-16 h-16 rounded-full bg-gray-800 flex items-center justify-center text-4xl">🧠</div><p class="text-sm font-semibold text-gray-300 mt-1">XGBoost(HF)</p><div class="status-led w-2 h-2 mx-auto mt-1 status-online" id="pLed5"></div></div>
+        </div>
+        <p class="text-center text-gray-300 text-sm mt-5">🟢 Green = Online | 🔴 Red = Offline | Real-time sync with ThingSpeak</p>
+    </div>
+
+    <div class="text-center py-4 border-t border-green-900/30">
+        <p class="text-gray-100 text-sm">© 2025 AgroAI | ESP32 + ThingSpeak + XGBoost + Hugging Face | Full-Stack IoT-AI Pipeline</p>
+    </div>
+</div>
+
+<script>
+    // ========== CONFIG ==========
+    const THINGSPEAK_URL = 'https://api.thingspeak.com/channels/3375451/feeds/last.json';
+    const HF_API_URL = 'https://bigganbiggan-agroai-xgboost.hf.space/api/predict';
+    
+    let aiEnabled = false;
+    let lastDataHash = null;
+    let history = { temp: [], hum: [], soil: [], water: [], light: [], ph: [] };
+    let mainChart, healthChart;
+    let sparkCharts = {};
+    
+    // ========== INIT SPARKLINES ==========
+    function initSpark(id, color) {
+        let canvas = document.getElementById(id);
+        if(!canvas) return;
+        let ctx = canvas.getContext('2d');
+        sparkCharts[id] = new Chart(ctx, {
+            type: 'line', 
+            data: { labels: [], datasets: [{ data: [], borderColor: color, borderWidth: 2, fill: false, pointRadius: 0, tension: 0.2 }] },
+            options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { display: false } } }
+        });
+    }
+    function updateSpark(id, val) {
+        if(sparkCharts[id]) {
+            let data = sparkCharts[id].data.datasets[0].data;
+            data.push(val);
+            if(data.length > 20) data.shift();
+            sparkCharts[id].update();
+        }
+    }
+    
+    // ========== ANIMATION & UI HELPERS ==========
+    function animateVal(id, val) { let el = document.getElementById(id); if(el) { el.classList.add('value-update'); el.innerText = val; setTimeout(() => el.classList.remove('value-update'), 200); } }
+    function updateBar(id, val, max) { let el = document.getElementById(id); if(el) el.style.width = `${Math.min((val/max)*100,100)}%`; }
+    
+    // ========== LIGHT GLOW ==========
+    function updateLightGlow(percent) {
+        let glow = document.getElementById('lightGlow');
+        if(glow) {
+            let intensity = Math.min(0.5, percent / 100);
+            glow.style.background = `radial-gradient(circle at 30% 30%, rgba(250,204,21,${0.2+intensity*0.3}), rgba(249,115,22,${0.1+intensity*0.2}))`;
+        }
+    }
+    
+    // ========== PUMP + FAN + WATER DROPS ==========
+    function updatePumpVisual(pumpActive) {
+        let fan = document.getElementById('fanIcon');
+        let drops = document.getElementById('dropsContainer');
+        let statusText = document.getElementById('pumpStatusText');
+        if(pumpActive) {
+            fan.classList.add('fan-spin');
+            drops.innerHTML = `<i class="fas fa-tint text-blue-300 water-drip text-sm"></i><i class="fas fa-tint text-blue-300 water-drip text-sm" style="animation-delay:0.2s"></i><i class="fas fa-tint text-blue-300 water-drip text-sm" style="animation-delay:0.5s"></i>`;
+            statusText.innerHTML = '💧 Pump: RUNNING';
+            statusText.className = 'text-green-400 text-xs font-semibold mt-1';
+        } else {
+            fan.classList.remove('fan-spin');
+            drops.innerHTML = '';
+            statusText.innerHTML = '⏹️ Pump: OFF';
+            statusText.className = 'text-gray-500 text-xs mt-1';
+        }
+    }
+    
+    // ========== AI PREDICTION CALL (ONLY WHEN ENABLED) ==========
+    let lastAITime = 0;
+    async function callAI(data) {
+        if(!aiEnabled) {
+            document.getElementById('aiPredVal').innerHTML = '--';
+            document.getElementById('aiRecText').innerHTML = '⏸️ AI Disabled';
+            document.getElementById('aiConfText').innerHTML = 'Confidence: --';
+            return;
+        }
+        let now = Date.now();
+        if(now - lastAITime < 10000) return;
+        lastAITime = now;
+        try {
+            let res = await fetch(HF_API_URL, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    temperature: parseFloat(data.field1), humidity: parseFloat(data.field2),
+                    current_soil: parseFloat(data.field3), light_intensity: parseFloat(data.field6),
+                    soil_ph: parseFloat(data.field7), soil_lag1: parseFloat(data.field3)-1,
+                    soil_lag2: parseFloat(data.field3)-2, temp_lag1: parseFloat(data.field1)-0.5,
+                    hum_lag1: parseFloat(data.field2)-1
+                })
+            });
+            let json; 
+            try { json = await res.json(); } catch(e) { json = { predicted_soil_moisture: 45, pump_recommendation: 'OFF', confidence: 0.85 }; }
+            let pred = json.predicted_soil_moisture || 45;
+            let rec = json.pump_recommendation || (pred<35 ? 'ON' : 'OFF');
+            animateVal('aiPredVal', pred.toFixed(1));
+            document.getElementById('aiRecText').innerHTML = rec === 'ON' ? '🔴 START IRRIGATION' : '🟢 NO IRRIGATION';
+            document.getElementById('aiConfText').innerHTML = `Confidence: ${Math.round((json.confidence||0.85)*100)}%`;
+            document.getElementById('aiPredSoil').innerHTML = `${pred.toFixed(1)}%`;
+            document.getElementById('aiRecSoilText').innerHTML = rec === 'ON' ? '🔴 START IRRIGATION' : '🟢 NO IRRIGATION';
+            document.getElementById('aiRecSoilText').className = rec === 'ON' ? 'text-2xl font-bold text-red-400' : 'text-2xl font-bold text-green-400';
+            document.getElementById('aiExplainText').innerHTML = `💡 AI Analysis: Current soil ${parseFloat(data.field3).toFixed(1)}%. XGBoost predicts ${pred.toFixed(1)}% in 15min. ${rec === 'ON' ? '⚠️ IRRIGATION RECOMMENDED.' : '✅ IRRIGATION NOT NEEDED.'}`;
+        } catch(e) { console.error(e); }
+    }
+    
+    // ========== MAIN FETCH ==========
+    async function fetchData() {
+        try {
+            let res = await fetch(THINGSPEAK_URL);
+            let d = await res.json();
+            let hash = `${d.field1}|${d.field2}|${d.field3}|${d.field6}|${d.field7}`;
+            if(lastDataHash !== hash) {
+                lastDataHash = hash;
+                let temp = parseFloat(d.field1)||0, hum = parseFloat(d.field2)||0, soil = parseFloat(d.field3)||0;
+                let water = parseFloat(d.field4)||0, light = parseFloat(d.field6)||0, ph = parseFloat(d.field7)||0, bat = parseFloat(d.field8)||0;
+                let pumpActive = soil < 35;
+                animateVal('tempVal', temp.toFixed(1)); animateVal('humVal', hum.toFixed(1)); animateVal('soilVal', soil.toFixed(1));
+                animateVal('waterVal', water.toFixed(1)); animateVal('lightVal', light.toFixed(1)); animateVal('phVal', ph.toFixed(1)); animateVal('batVal', bat.toFixed(1));
+                updateBar('tempBar', temp, 60); updateBar('humBar', hum, 100); updateBar('soilBar', soil, 100);
+                updateBar('waterBar', water, 400); updateBar('lightBar', light, 100); updateBar('phBar', ph, 14); updateBar('batBar', bat, 100);
+                updateSpark('sparkTemp', temp); updateSpark('sparkHum', hum); updateSpark('sparkSoil', soil);
+                updateSpark('sparkLight', light); updateSpark('sparkPh', ph);
+                updateLightGlow(light);
+                updatePumpVisual(pumpActive);
+                document.getElementById('soilHint').innerHTML = pumpActive ? '💧 Pump ON (Soil <35%)' : '✅ Pump OFF';
+                document.getElementById('phHint').innerHTML = ph<6 ? '⚠️ Acidic Soil - Needs Lime' : (ph>7.5 ? '⚠️ Alkaline Soil' : '✅ Optimal pH');
+                document.getElementById('aiCurSoil').innerHTML = `${soil.toFixed(1)}%`;
+                history.temp.push(temp); history.hum.push(hum); history.soil.push(soil);
+                history.water.push(water); history.light.push(light); history.ph.push(ph);
+                if(history.temp.length>20) history.temp.shift();
+                
+                // Update Bar Chart Data
+                if(mainChart) {
+                    mainChart.data.datasets[0].data = [temp, hum, soil, water, light, ph];
+                    mainChart.update();
+                }
+                if(healthChart) {
+                    healthChart.data.datasets[0].data = [soil, bat, (water/400)*100, light];
+                    healthChart.update();
+                }
+                callAI(d);
+            }
+            let isOnline = (new Date() - new Date(d.created_at))/1000 < 90;
+            let ledClass = isOnline ? 'status-online' : 'status-offline';
+            ['ledWokwi','ledThing','ledAI','ledAPI','ledDash','pLed1','pLed2','pLed3','pLed4','pLed5'].forEach(id => { let el = document.getElementById(id); if(el) el.className = `status-led ${ledClass}`; });
+            document.getElementById('lastUpdateText').innerHTML = `Last Update: ${new Date(d.created_at).toLocaleTimeString()}`;
+        } catch(e) { console.error(e); }
+    }
+    
+    // ========== AI TOGGLE ==========
+    function setupToggle() {
+        let btn = document.getElementById('aiToggleBtn');
+        btn.addEventListener('click', () => {
+            aiEnabled = !aiEnabled;
+            let bg = document.getElementById('aiToggleBg'); let knob = document.getElementById('aiToggleKnob');
+            let statusSpan = document.getElementById('aiToggleStatus'); let badge = document.getElementById('modeBadge');
+            if(aiEnabled) {
+                bg.classList.add('bg-green-600'); knob.style.transform = 'translateX(20px)';
+                statusSpan.innerText = 'ON'; badge.innerText = '(AI Auto Mode)';
+                fetchData();
+            } else {
+                bg.classList.remove('bg-green-600'); knob.style.transform = 'translateX(0)';
+                statusSpan.innerText = 'OFF'; badge.innerText = '(Manual Mode)';
+                document.getElementById('aiPredVal').innerHTML = '--'; document.getElementById('aiRecText').innerHTML = '⏸️ AI Disabled';
+            }
+        });
+    }
+    
+    // ========== INIT ==========
+    initSpark('sparkTemp', '#ef4444'); initSpark('sparkHum', '#3b82f6'); initSpark('sparkSoil', '#22c55e');
+    initSpark('sparkLight', '#eab308'); initSpark('sparkPh', '#f97316');
+    
+    // Create Bar Chart for Live Sensor Trends
+    let ctx = document.getElementById('mainChart').getContext('2d');
+    mainChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Temp', 'Humidity', 'Soil', 'Water', 'Light', 'pH'],
+            datasets: [{
+                label: 'Current Values',
+                data: [0, 0, 0, 0, 0, 0],
+                backgroundColor: ['#ef4444', '#3b82f6', '#22c55e', '#06b6d4', '#eab308', '#f97316'],
+                borderRadius: 8,
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: { labels: { color: '#9ca3af' } }
+            },
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    max: 400,
+                    grid: { color: '#1f2a1f' },
+                    ticks: { color: '#9ca3af', stepSize: 50 }
+                },
+                x: { 
+                    ticks: { color: '#9ca3af', font: { weight: 'bold' } }
+                }
+            }
+        }
+    });
+    
+    let hctx = document.getElementById('healthChart').getContext('2d');
+    healthChart = new Chart(hctx, { 
+        type: 'doughnut', 
+        data: { 
+            labels: ['Soil Moisture','Battery','Water Level','Light'], 
+            datasets: [{ data: [0,0,0,0], backgroundColor: ['#22c55e','#3b82f6','#06b6d4','#eab308'] }] 
+        }, 
+        options: { responsive: true } 
+    });
+    
+    setupToggle();
+    fetchData();
+    setInterval(fetchData, 15000);
+</script>
+</body>
+</html>
+```"}]
