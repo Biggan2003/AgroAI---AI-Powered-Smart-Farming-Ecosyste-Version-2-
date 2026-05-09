@@ -10,11 +10,15 @@
 
 **AI-Powered IoT Smart Farming | Real-Time Crop Monitoring | Predictive Irrigation**
 
-[![Live Demo](https://img.shields.io/badge/Live_Demo-View_Now-22c55e?style=for-the-badge&logo=vercel&logoColor=white)](https://your-netlify-url.netlify.app)
-[![GitHub](https://img.shields.io/badge/GitHub-Repo-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/yourusername/agroai-dashboard)
-[![Author](https://img.shields.io/badge/Author-G.M._Biggan-8B5CF6?style=for-the-badge&logo=portfolio&logoColor=white)](https://biggan-aiml-portfolio-v1.netlify.app)
-
 </div>
+
+### Live Demo: https://agroai-biggan.netlify.app/
+### ThingSpeak Dashboard: https://thingspeak.mathworks.com/channels/3375451
+### AI model predictor(Huggging Face) : https://huggingface.co/spaces/bigganbiggan/agroai-xgboost
+### Sensor with ESP(WOKWI):  https://wokwi.com/projects/463509416388137985
+
+
+
 <img width="1918" height="993" alt="image" src="https://github.com/user-attachments/assets/bb42fcf7-abb2-479b-8701-aaf0c381083b" />
 
 <img width="1913" height="957" alt="image" src="https://github.com/user-attachments/assets/2867fa7c-70fe-44d1-96f3-6a1144350496" />
