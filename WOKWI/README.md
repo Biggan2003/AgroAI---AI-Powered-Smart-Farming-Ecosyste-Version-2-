@@ -1,4 +1,4 @@
-# 🌾 AgroAI - Smart Irrigation System
+# 🌾 AgroAI - WOKWI   all sensor and LIVE Changing 
 
 [![Wokwi](https://img.shields.io/badge/Wokwi-Simulation-orange)](https://wokwi.com)
 [![ESP32](https://img.shields.io/badge/ESP32-Platform-blue)](https://www.espressif.com)
