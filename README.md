@@ -1,2 +1,15 @@
 # AgroAI---AI-Powered-Smart-Farming-Ecosyste-Version-2-
 Version 2
+<img width="1918" height="993" alt="image" src="https://github.com/user-attachments/assets/bb42fcf7-abb2-479b-8701-aaf0c381083b" />
+
+<img width="1913" height="957" alt="image" src="https://github.com/user-attachments/assets/2867fa7c-70fe-44d1-96f3-6a1144350496" />
+
+
+<img width="1909" height="955" alt="image" src="https://github.com/user-attachments/assets/e569a371-0a78-49c7-9e83-5d63dc444493" />
+
+<img width="1365" height="675" alt="image" src="https://github.com/user-attachments/assets/5a0d9a87-2264-45f0-af93-87d3de11b697" />
+
+<img width="1365" height="635" alt="image" src="https://github.com/user-attachments/assets/426ddd47-374c-4fe6-853b-b05abf2dcb96" />
+
+<img width="1895" height="961" alt="image" src="https://github.com/user-attachments/assets/cd27bc37-9b96-4865-b91f-0d9d9416f1b8" />
+
