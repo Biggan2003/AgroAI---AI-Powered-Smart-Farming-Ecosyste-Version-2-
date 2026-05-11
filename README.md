@@ -1,10 +1,10 @@
 <div align="center">
   
 # 🌾 AgroAI---AI-Powered-Smart-Farming-Ecosyste-Version-2
-  
+
+<img src="https://img.shields.io/badge/XGBoost-Active-f97316?style=for-the-badge&logo=xgboost&logoColor=white"/>  
 <img src="https://img.shields.io/badge/ESP32-Online-22c55e?style=for-the-badge&logo=espressif&logoColor=white"/>
 <img src="https://img.shields.io/badge/ThingSpeak-Connected-3b82f6?style=for-the-badge&logo=thingspeak&logoColor=white"/>
-<img src="https://img.shields.io/badge/XGBoost-Active-f97316?style=for-the-badge&logo=xgboost&logoColor=white"/>
 <img src="https://img.shields.io/badge/HuggingFace-Deployed-8B5CF6?style=for-the-badge&logo=huggingface&logoColor=white"/>
 <img src="https://img.shields.io/badge/Netlify-Live-22c55e?style=for-the-badge&logo=netlify&logoColor=white"/>
 
@@ -18,13 +18,16 @@
 ### Sensor with ESP(WOKWI):  https://wokwi.com/projects/463509416388137985
 
 
-
+<img width="1909" height="955" alt="image" src="https://github.com/user-attachments/assets/e569a371-0a78-49c7-9e83-5d63dc444493" />
 <img width="1918" height="993" alt="image" src="https://github.com/user-attachments/assets/bb42fcf7-abb2-479b-8701-aaf0c381083b" />
 
 <img width="1913" height="957" alt="image" src="https://github.com/user-attachments/assets/2867fa7c-70fe-44d1-96f3-6a1144350496" />
+<img width="1408" height="768" alt="workflow" src="https://github.com/user-attachments/assets/3fefd7d8-40e9-4fb5-956c-f0acd796ddf9" />
 
 
-<img width="1909" height="955" alt="image" src="https://github.com/user-attachments/assets/e569a371-0a78-49c7-9e83-5d63dc444493" />
+
+
+
 
 <img width="1365" height="675" alt="image" src="https://github.com/user-attachments/assets/5a0d9a87-2264-45f0-af93-87d3de11b697" />
 
