@@ -16,6 +16,7 @@
 ### ThingSpeak Dashboard: https://thingspeak.mathworks.com/channels/3375451
 ### AI model predictor(Huggging Face) : https://huggingface.co/spaces/bigganbiggan/agroai-xgboost
 ### Sensor with ESP(WOKWI):  https://wokwi.com/projects/463509416388137985
+### Kaggle AGROAI XGBOOST MODEL TRAINING: https://www.kaggle.com/code/gmbiggan/agroai-xgboost-model-training
 
 
 <img width="1909" height="955" alt="image" src="https://github.com/user-attachments/assets/e569a371-0a78-49c7-9e83-5d63dc444493" />
